@@ -110,15 +110,17 @@
                         <legend>Deletion criteria</legend>
                         <div class="mc-grid">
                             <div class="inputContainer">
-                                <label class="inputLabel inputLabelUnfocused" for="DaysBeforeDeletion">Delete if added more than (days) ago</label>
+                                <label class="inputLabel inputLabelUnfocused" for="DaysBeforeDeletion">Delete if the reference date is more than (days) ago</label>
                                 <input id="DaysBeforeDeletion" type="number" is="emby-input" min="0" step="1" />
                             </div>
                             <div class="selectContainer">
-                                <label class="selectLabel" for="DateSource">Added date to use</label>
+                                <label class="selectLabel" for="DateSource">Reference date</label>
                                 <select id="DateSource" is="emby-select">
                                     <option value="Arr">Date added in Radarr / Sonarr</option>
                                     <option value="Jellyfin">Date added in Jellyfin</option>
+                                    <option value="Download">Download date (Radarr / Sonarr file import)</option>
                                 </select>
+                                <div class="fieldDescription">Download date: date the movie file was imported; for a series, the most recently downloaded episode (one extra Sonarr request per series). Falls back to the Radarr / Sonarr added date when there is no file.</div>
                             </div>
                             <div class="inputContainer">
                                 <label class="inputLabel inputLabelUnfocused" for="KeepIfPlayedWithinDays">Keep if played in the last X days (0 = disabled)</label>

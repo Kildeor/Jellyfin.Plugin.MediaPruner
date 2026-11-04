@@ -12,7 +12,13 @@ public enum DateSource
     Arr = 0,
 
     /// <summary>Date added to the Jellyfin library.</summary>
-    Jellyfin = 1
+    Jellyfin = 1,
+
+    /// <summary>
+    /// Date the file was downloaded / imported by Radarr / Sonarr
+    /// (for series: the most recently downloaded episode).
+    /// </summary>
+    Download = 2
 }
 
 /// <summary>

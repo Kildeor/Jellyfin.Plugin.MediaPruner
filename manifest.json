@@ -9,12 +9,20 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.1.0.0",
+        "changelog": "New reference date option: download date (Radarr movie file import date, Sonarr most recently downloaded episode).",
+        "targetAbi": "12.4.0.0",
+        "sourceUrl": "https://github.com/Kildeor/Jellyfin.Plugin.MediaPruner/releases/download/v1.1.0.0/MediaPruner_1.1.0.0.zip",
+        "checksum": "4cb0ba44f4f021a7982117da53dda3fa",
+        "timestamp": "2026-11-04T22:25:05Z"
+      },
+      {
         "version": "1.0.0.0",
         "changelog": "Initial release: Radarr/Sonarr cleanup, Leaving soon tag and collection.",
         "targetAbi": "12.4.0.0",
         "sourceUrl": "https://github.com/Kildeor/Jellyfin.Plugin.MediaPruner/releases/download/v1.0.0.0/MediaPruner_1.0.0.0.zip",
-        "checksum": "7e2c71ff80d66f14c1ef20c7018af42b",
-        "timestamp": "2026-11-04T21:59:55Z"
+        "checksum": "330b81a737460c8747aa7da9fa25c7de",
+        "timestamp": "2026-11-04T22:22:57Z"
       }
     ]
   }

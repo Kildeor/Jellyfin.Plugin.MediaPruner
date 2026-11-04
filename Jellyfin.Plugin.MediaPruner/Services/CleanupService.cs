@@ -95,7 +95,7 @@ public class CleanupService
                         PosterUrl = Poster(m.Images),
                     };
 
-                    if (!ComputeDates(c, m.Added, jf, config, now, window))
+                    if (!ComputeDates(c, m.Added, m.MovieFile?.DateAdded, jf, config, now, window))
                     {
                         continue;
                     }
@@ -129,6 +129,9 @@ public class CleanupService
                 var tagIds = TagIds(tags, protectedTags);
                 var series = await _arr.GetSeriesAsync(config.SonarrUrl, config.SonarrApiKey, ct).ConfigureAwait(false);
                 var index = BuildIndex(BaseItemKind.Series);
+                var downloadDates = config.DateSource == DateSource.Download
+                    ? await GetSeriesDownloadDatesAsync(config, series, ct).ConfigureAwait(false)
+                    : new Dictionary<int, DateTime>();
 
                 foreach (var s in series)
                 {
@@ -148,7 +151,7 @@ public class CleanupService
                         PosterUrl = Poster(s.Images),
                     };
 
-                    if (!ComputeDates(c, s.Added, jf, config, now, window))
+                    if (!ComputeDates(c, s.Added, downloadDates.TryGetValue(s.Id, out var dl) ? dl : null, jf, config, now, window))
                     {
                         continue;
                     }
@@ -639,10 +642,48 @@ public class CleanupService
     private static string? Poster(IEnumerable<ArrImage> images)
         => images.FirstOrDefault(i => string.Equals(i.CoverType, "poster", StringComparison.OrdinalIgnoreCase))?.RemoteUrl;
 
-    /// <summary>Computes the dates; returns false if the item is outside the displayed window.</summary>
-    private static bool ComputeDates(CleanupCandidate c, DateTime? arrAdded, BaseItem? jf, PluginConfiguration config, DateTime now, int window)
+    /// <summary>
+    /// For each series with files, the date of its most recently downloaded episode file
+    /// (one Sonarr request per series, a few in parallel).
+    /// </summary>
+    private async Task<Dictionary<int, DateTime>> GetSeriesDownloadDatesAsync(PluginConfiguration config, IReadOnlyList<SonarrSeries> series, CancellationToken ct)
     {
-        DateTime? added = config.DateSource == DateSource.Jellyfin && jf is not null ? jf.DateCreated : arrAdded;
+        var result = new System.Collections.Concurrent.ConcurrentDictionary<int, DateTime>();
+        await Parallel.ForEachAsync(
+            series.Where(s => (s.Statistics?.EpisodeFileCount ?? 0) > 0),
+            new ParallelOptions { MaxDegreeOfParallelism = 4, CancellationToken = ct },
+            async (s, token) =>
+            {
+                try
+                {
+                    var files = await _arr.GetEpisodeFilesAsync(config.SonarrUrl, config.SonarrApiKey, s.Id, token).ConfigureAwait(false);
+                    var last = files.Where(f => f.DateAdded is not null).Max(f => f.DateAdded);
+                    if (last is not null)
+                    {
+                        result[s.Id] = last.Value;
+                    }
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    // Falls back to the date added in Sonarr for this series.
+                    _logger.LogWarning(ex, "Media Pruner: unable to read episode files of {Title}", s.Title);
+                }
+            }).ConfigureAwait(false);
+
+        return new Dictionary<int, DateTime>(result);
+    }
+
+    /// <summary>Computes the dates; returns false if the item is outside the displayed window.</summary>
+    private static bool ComputeDates(CleanupCandidate c, DateTime? arrAdded, DateTime? downloaded, BaseItem? jf, PluginConfiguration config, DateTime now, int window)
+    {
+        DateTime? added = config.DateSource switch
+        {
+            DateSource.Jellyfin when jf is not null => jf.DateCreated,
+            DateSource.Download => downloaded,
+            _ => arrAdded
+        };
+
+        // Fallback to the Radarr/Sonarr added date (item not in Jellyfin, nothing downloaded yet, ...).
         if (added is null || added.Value.Year < 1900)
         {
             added = arrAdded;

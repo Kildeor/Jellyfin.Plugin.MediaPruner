@@ -63,6 +63,20 @@ public class RadarrMovie
 
     [JsonPropertyName("images")]
     public List<ArrImage> Images { get; set; } = new();
+
+    [JsonPropertyName("movieFile")]
+    public ArrFile? MovieFile { get; set; }
+}
+
+/// <summary>Radarr movie file / Sonarr episode file (only the fields used).</summary>
+public class ArrFile
+{
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+
+    /// <summary>Date the file was imported (downloaded).</summary>
+    [JsonPropertyName("dateAdded")]
+    public DateTime? DateAdded { get; set; }
 }
 
 public class SonarrStatistics

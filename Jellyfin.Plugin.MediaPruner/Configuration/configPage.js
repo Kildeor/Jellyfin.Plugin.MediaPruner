@@ -119,7 +119,7 @@ export default function (view) {
             numberFields.forEach(f => { $('#' + f).value = config[f] ?? 0; });
             boolFields.forEach(f => { $('#' + f).checked = !!config[f]; });
             const ds = String(config.DateSource);
-            $('#DateSource').value = (ds === '1' || ds === 'Jellyfin') ? 'Jellyfin' : 'Arr';
+            $('#DateSource').value = ({ '1': 'Jellyfin', 'Jellyfin': 'Jellyfin', '2': 'Download', 'Download': 'Download' })[ds] || 'Arr';
             Dashboard.hideLoadingMsg();
         });
     }
@@ -197,7 +197,7 @@ export default function (view) {
 
         let html = '<table class="mc-table"><thead><tr>' +
             '<th><input type="checkbox" class="mc-selall" title="Select all"></th><th></th><th>Title</th><th>Source</th>' +
-            '<th>Added</th><th>Deletion</th><th>Size</th><th>Status</th><th>Actions</th>' +
+            `<th>${$('#DateSource').value === 'Download' ? 'Downloaded' : 'Added'}</th><th>Deletion</th><th>Size</th><th>Status</th><th>Actions</th>` +
             '</tr></thead><tbody>';
 
         list.forEach(c => {

@@ -33,6 +33,13 @@ public class ArrClient
     public async Task<IReadOnlyList<SonarrSeries>> GetSeriesAsync(string baseUrl, string apiKey, CancellationToken ct)
         => await GetAsync<List<SonarrSeries>>(baseUrl, apiKey, "api/v3/series", ct).ConfigureAwait(false) ?? new List<SonarrSeries>();
 
+    public async Task<IReadOnlyList<ArrFile>> GetEpisodeFilesAsync(string baseUrl, string apiKey, int seriesId, CancellationToken ct)
+        => await GetAsync<List<ArrFile>>(
+            baseUrl,
+            apiKey,
+            string.Format(CultureInfo.InvariantCulture, "api/v3/episodefile?seriesId={0}", seriesId),
+            ct).ConfigureAwait(false) ?? new List<ArrFile>();
+
     public async Task<IReadOnlyList<ArrTag>> GetTagsAsync(string baseUrl, string apiKey, CancellationToken ct)
         => await GetAsync<List<ArrTag>>(baseUrl, apiKey, "api/v3/tag", ct).ConfigureAwait(false) ?? new List<ArrTag>();
 
