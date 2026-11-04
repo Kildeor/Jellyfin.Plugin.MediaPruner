@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Media Pruner</title>
+</head>
+<body>
+<div id="MediaPrunerPage" data-role="page" class="page type-interior pluginConfigurationPage mediaPrunerPage"
+     data-require="emby-input,emby-button,emby-select,emby-checkbox"
+     data-controller="__plugin/MediaPrunerjs">
+    <style>
+        .mediaPrunerPage .mc-tabs { display: flex; gap: .5em; flex-wrap: wrap; margin: 1em 0 1.5em; border-bottom: 1px solid rgba(128,128,128,.3); }
+        .mediaPrunerPage .mc-tab { background: none; border: none; color: inherit; padding: .7em 1.2em; cursor: pointer; font-size: 1em; opacity: .7; border-bottom: 3px solid transparent; }
+        .mediaPrunerPage .mc-tab.active { opacity: 1; border-bottom-color: #00a4dc; font-weight: 600; }
+        .mediaPrunerPage .mc-panel { display: none; }
+        .mediaPrunerPage .mc-panel.active { display: block; }
+        .mediaPrunerPage fieldset { border: 1px solid rgba(128,128,128,.3); border-radius: .4em; padding: 1em 1.2em; margin-bottom: 1.5em; }
+        .mediaPrunerPage legend { padding: 0 .5em; font-weight: 600; font-size: 1.1em; }
+        .mediaPrunerPage .mc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0 1.5em; }
+        .mediaPrunerPage .mc-toolbar { display: flex; flex-wrap: wrap; gap: .6em; align-items: center; margin-bottom: 1em; }
+        .mediaPrunerPage .mc-toolbar .checkboxContainer { margin: 0 1em 0 0; }
+        .mediaPrunerPage .mc-summary { display: flex; flex-wrap: wrap; gap: 1em; margin-bottom: 1em; }
+        .mediaPrunerPage .mc-stat { background: rgba(128,128,128,.12); border-radius: .4em; padding: .6em 1em; min-width: 9em; }
+        .mediaPrunerPage .mc-stat b { display: block; font-size: 1.4em; }
+        .mediaPrunerPage .mc-table-wrap { overflow-x: auto; }
+        .mediaPrunerPage table.mc-table { width: 100%; border-collapse: collapse; }
+        .mediaPrunerPage .mc-table th, .mediaPrunerPage .mc-table td { text-align: left; padding: .5em .6em; border-bottom: 1px solid rgba(128,128,128,.2); vertical-align: middle; }
+        .mediaPrunerPage .mc-table th { font-weight: 600; white-space: nowrap; }
+        .mediaPrunerPage .mc-table tr.mc-excluded { opacity: .55; }
+        .mediaPrunerPage .mc-poster { width: 40px; height: 60px; object-fit: cover; border-radius: 3px; background: rgba(128,128,128,.2); display: block; }
+        .mediaPrunerPage .mc-badge { display: inline-block; padding: .15em .55em; border-radius: 1em; font-size: .8em; margin: .1em .2em .1em 0; white-space: nowrap; }
+        .mediaPrunerPage .mc-radarr { background: #ffc230; color: #222; }
+        .mediaPrunerPage .mc-sonarr { background: #35c5f4; color: #222; }
+        .mediaPrunerPage .mc-due { background: #cc3333; color: #fff; }
+        .mediaPrunerPage .mc-soon { background: #e08a00; color: #fff; }
+        .mediaPrunerPage .mc-reason { background: rgba(128,128,128,.25); }
+        .mediaPrunerPage .mc-ok { color: #52b54b; }
+        .mediaPrunerPage .mc-err { color: #cc3333; }
+        .mediaPrunerPage .mc-small { font-size: .85em; opacity: .75; }
+        .mediaPrunerPage .mc-actions button { margin: 0 .2em; }
+        .mediaPrunerPage .mc-empty { padding: 2em; text-align: center; opacity: .7; }
+        .mediaPrunerPage .mc-test { margin-left: .8em; }
+    </style>
+
+    <div data-role="content">
+        <div class="content-primary">
+            <div class="verticalSection">
+                <div class="sectionTitleContainer flex align-items-center">
+                    <h2 class="sectionTitle">Media Pruner</h2>
+                </div>
+                <p class="fieldDescription">Automatically or manually deletes movies (Radarr) and series (Sonarr) based on your criteria.</p>
+            </div>
+
+            <div class="mc-tabs" role="tablist">
+                <button type="button" class="mc-tab active" data-tab="options">⚙️ Options</button>
+                <button type="button" class="mc-tab" data-tab="candidates">🗑️ Pending deletion</button>
+                <button type="button" class="mc-tab" data-tab="history">📜 History</button>
+            </div>
+
+            <!-- ============================ OPTIONS PANEL ============================== -->
+            <div class="mc-panel active" data-panel="options">
+                <form id="MediaPrunerConfigForm">
+                    <fieldset>
+                        <legend>Radarr (movies)</legend>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="RadarrEnabled" type="checkbox" is="emby-checkbox" />
+                                <span>Enable Radarr</span>
+                            </label>
+                        </div>
+                        <div class="mc-grid">
+                            <div class="inputContainer">
+                                <label class="inputLabel inputLabelUnfocused" for="RadarrUrl">URL</label>
+                                <input id="RadarrUrl" type="url" is="emby-input" placeholder="http://localhost:7878" />
+                            </div>
+                            <div class="inputContainer">
+                                <label class="inputLabel inputLabelUnfocused" for="RadarrApiKey">API key</label>
+                                <input id="RadarrApiKey" type="password" is="emby-input" autocomplete="off" />
+                                <div class="fieldDescription">Radarr → Settings → General → Security.</div>
+                            </div>
+                        </div>
+                        <button is="emby-button" type="button" class="raised button-alt btnTest" data-kind="Radarr"><span>Test connection</span></button>
+                        <span class="mc-test" id="RadarrTestResult"></span>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Sonarr (series)</legend>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="SonarrEnabled" type="checkbox" is="emby-checkbox" />
+                                <span>Enable Sonarr</span>
+                            </label>
+                        </div>
+                        <div class="mc-grid">
+                            <div class="inputContainer">
+                                <label class="inputLabel inputLabelUnfocused" for="SonarrUrl">URL</label>
+                                <input id="SonarrUrl" type="url" is="emby-input" placeholder="http://localhost:8989" />
+                            </div>
+                            <div class="inputContainer">
+                                <label class="inputLabel inputLabelUnfocused" for="SonarrApiKey">API key</label>
+                                <input id="SonarrApiKey" type="password" is="emby-input" autocomplete="off" />
+                                <div class="fieldDescription">Sonarr → Settings → General → Security.</div>
+                            </div>
+                        </div>
+                        <button is="emby-button" type="button" class="raised button-alt btnTest" data-kind="Sonarr"><span>Test connection</span></button>
+                        <span class="mc-test" id="SonarrTestResult"></span>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Deletion criteria</legend>
+                        <div class="mc-grid">
+                            <div class="inputContainer">
+                                <label class="inputLabel inputLabelUnfocused" for="DaysBeforeDeletion">Delete if added more than (days) ago</label>
+                                <input id="DaysBeforeDeletion" type="number" is="emby-input" min="0" step="1" />
+                            </div>
+                            <div class="selectContainer">
+                                <label class="selectLabel" for="DateSource">Added date to use</label>
+                                <select id="DateSource" is="emby-select">
+                                    <option value="Arr">Date added in Radarr / Sonarr</option>
+                                    <option value="Jellyfin">Date added in Jellyfin</option>
+                                </select>
+                            </div>
+                            <div class="inputContainer">
+                                <label class="inputLabel inputLabelUnfocused" for="KeepIfPlayedWithinDays">Keep if played in the last X days (0 = disabled)</label>
+                                <input id="KeepIfPlayedWithinDays" type="number" is="emby-input" min="0" step="1" />
+                            </div>
+                            <div class="inputContainer">
+                                <label class="inputLabel inputLabelUnfocused" for="ProtectedTags">Protected tags (comma-separated)</label>
+                                <input id="ProtectedTags" type="text" is="emby-input" />
+                                <div class="fieldDescription">Items with any of these tags in Radarr/Sonarr are never deleted automatically.</div>
+                            </div>
+                        </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="KeepFavorites" type="checkbox" is="emby-checkbox" />
+                                <span>Do not delete if favorited (by any user)</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="KeepFavoriteEpisodes" type="checkbox" is="emby-checkbox" />
+                                <span>Series: a favorited season or episode protects the whole series</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="OnlyWatched" type="checkbox" is="emby-checkbox" />
+                                <span>Only delete items fully watched by at least one user</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="KeepContinuingSeries" type="checkbox" is="emby-checkbox" />
+                                <span>Do not delete series that are still airing</span>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Deletion mode</legend>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="AutoDelete" type="checkbox" is="emby-checkbox" />
+                                <span>Automatic deletion</span>
+                            </label>
+                            <div class="fieldDescription checkboxFieldDescription">When disabled, deletion is manual only, from the "Pending deletion" tab. The schedule is set in Dashboard → Scheduled Tasks → Media Pruner.</div>
+                        </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="DryRun" type="checkbox" is="emby-checkbox" />
+                                <span>Dry-run mode</span>
+                            </label>
+                            <div class="fieldDescription checkboxFieldDescription">The automatic task logs what it would delete without deleting anything. Recommended to validate your criteria.</div>
+                        </div>
+                        <div class="mc-grid">
+                            <div class="inputContainer">
+                                <label class="inputLabel inputLabelUnfocused" for="MaxDeletionsPerRun">Max. deletions per automatic run (0 = unlimited)</label>
+                                <input id="MaxDeletionsPerRun" type="number" is="emby-input" min="0" step="1" />
+                            </div>
+                            <div class="inputContainer">
+                                <label class="inputLabel inputLabelUnfocused" for="WarningDays">Show items deleted within the next X days</label>
+                                <input id="WarningDays" type="number" is="emby-input" min="0" step="1" />
+                            </div>
+                        </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="DeleteFiles" type="checkbox" is="emby-checkbox" />
+                                <span>Also delete files from disk</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="AddImportExclusion" type="checkbox" is="emby-checkbox" />
+                                <span>Add to the import exclusion list (prevents re-adding by lists)</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="RefreshLibraryAfterDelete" type="checkbox" is="emby-checkbox" />
+                                <span>Scan the Jellyfin library after deletion</span>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Jellyfin tag</legend>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="TagPendingItems" type="checkbox" is="emby-checkbox" />
+                                <span>Tag media that will be deleted soon</span>
+                            </label>
+                            <div class="fieldDescription checkboxFieldDescription">Adds a Jellyfin tag to movies and series that will be deleted within the "Show items deleted within the next X days" window (excluded items are not tagged). The tag is removed automatically once an item is protected, favorited, etc. Updated by the scheduled task and when the "Pending deletion" tab is opened.</div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="PendingTagName">Tag name</label>
+                            <input id="PendingTagName" type="text" is="emby-input" placeholder="Leaving soon" />
+                            <div class="fieldDescription">Users can filter the library by this tag to see what will disappear soon.</div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Jellyfin collection</legend>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="CollectionPendingItems" type="checkbox" is="emby-checkbox" />
+                                <span>Group media that will be deleted soon in a collection</span>
+                            </label>
+                            <div class="fieldDescription checkboxFieldDescription">Keeps a Jellyfin collection with the same items as the tag: items are added and removed automatically. Unchecking this deletes the collection created by the plugin (the media themselves are not affected).</div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="PendingCollectionName">Collection name</label>
+                            <input id="PendingCollectionName" type="text" is="emby-input" placeholder="Leaving soon" />
+                            <div class="fieldDescription">Renaming here renames the existing collection.</div>
+                        </div>
+                    </fieldset>
+
+                    <button is="emby-button" type="submit" class="raised button-submit block emby-button"><span>Save</span></button>
+                </form>
+            </div>
+
+            <!-- ======================== PENDING DELETION PANEL ========================= -->
+            <div class="mc-panel" data-panel="candidates">
+                <div class="mc-summary" id="mcSummary"></div>
+                <div class="mc-toolbar">
+                    <button is="emby-button" type="button" class="raised" id="btnRefresh"><span>Actualiser</span></button>
+                    <div class="checkboxContainer">
+                        <label class="emby-checkbox-label">
+                            <input id="chkShowExcluded" type="checkbox" is="emby-checkbox" />
+                            <span>Show excluded items</span>
+                        </label>
+                    </div>
+                    <div class="checkboxContainer">
+                        <label class="emby-checkbox-label">
+                            <input id="chkShowAll" type="checkbox" is="emby-checkbox" />
+                            <span>Entire library</span>
+                        </label>
+                    </div>
+                    <button is="emby-button" type="button" class="raised button-delete" id="btnDeleteSelected" disabled><span>Delete selected</span></button>
+                    <button is="emby-button" type="button" class="raised button-delete" id="btnDeleteEligible"><span>Delete all eligible</span></button>
+                </div>
+                <div id="mcErrors" class="mc-err"></div>
+                <div class="mc-table-wrap" id="mcCandidates"></div>
+            </div>
+
+            <!-- ============================ HISTORY PANEL ================================ -->
+            <div class="mc-panel" data-panel="history">
+                <div class="mc-toolbar">
+                    <button is="emby-button" type="button" class="raised" id="btnRefreshHistory"><span>Actualiser</span></button>
+                    <button is="emby-button" type="button" class="raised button-alt" id="btnClearHistory"><span>Clear history</span></button>
+                </div>
+                <div class="mc-table-wrap" id="mcHistory"></div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
