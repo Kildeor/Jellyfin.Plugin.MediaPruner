@@ -1,0 +1,149 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version (X.Y.Z.W, e.g. 1.2.0.0)'
+        required: true
+      changelog:
+        description: 'Changelog (empty = commit messages since the previous release)'
+        required: false
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  PROJECT: Jellyfin.Plugin.MediaPruner
+  ZIP_PREFIX: MediaPruner
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version and changelog
+        id: info
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_CHANGELOG: ${{ inputs.changelog }}
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="${INPUT_VERSION#v}"
+          fi
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid version '$VERSION' (expected X.Y.Z.W)"; exit 1
+          fi
+          TAG="v$VERSION"
+
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "::error::Tag $TAG already exists"; exit 1
+          fi
+
+          # Changelog: input > annotated tag message > commits since the previous tag
+          CHANGELOG="${INPUT_CHANGELOG:-}"
+          if [ -z "$CHANGELOG" ] && [ "$(git cat-file -t "refs/tags/$TAG" 2>/dev/null)" = "tag" ]; then
+            CHANGELOG="$(git tag -l --format='%(contents:subject)%0a%(contents:body)' "$TAG" | sed -e '/-----BEGIN PGP/,$d' -e '/^[[:space:]]*$/d')"
+          fi
+          if [ -z "$CHANGELOG" ]; then
+            PREV="$(git describe --tags --abbrev=0 --match 'v*' "${GITHUB_SHA}^" 2>/dev/null || true)"
+            RANGE="${PREV:+$PREV..}$GITHUB_SHA"
+            CHANGELOG="$(git log --no-merges --pretty='- %s' "$RANGE" -- . ':!manifest.json')"
+          fi
+          printf '%s\n' "$CHANGELOG" > "$RUNNER_TEMP/changelog.md"
+
+          # targetAbi follows the Jellyfin.Controller package version (12.4.0 -> 12.4.0.0)
+          ABI="$(grep -oP 'Include="Jellyfin.Controller" Version="\K[0-9.]+' "$PROJECT/$PROJECT.csproj")"
+          while [ "$(tr -cd '.' <<<"$ABI" | wc -c)" -lt 3 ]; do ABI="$ABI.0"; done
+
+          {
+            echo "version=$VERSION"
+            echo "tag=$TAG"
+            echo "abi=$ABI"
+            echo "timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "zip=${ZIP_PREFIX}_${VERSION}.zip"
+          } >> "$GITHUB_OUTPUT"
+          echo "Version $VERSION, targetAbi $ABI"; cat "$RUNNER_TEMP/changelog.md"
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Test
+        run: dotnet test Jellyfin.Plugin.MediaPruner.sln -c Release
+
+      - name: Build plugin
+        env:
+          VERSION: ${{ steps.info.outputs.version }}
+        run: |
+          dotnet publish "$PROJECT/$PROJECT.csproj" -c Release -o publish \
+            -p:Version="$VERSION" -p:AssemblyVersion="$VERSION" -p:FileVersion="$VERSION"
+
+      - name: Package
+        id: package
+        env:
+          VERSION: ${{ steps.info.outputs.version }}
+          ABI: ${{ steps.info.outputs.abi }}
+          TIMESTAMP: ${{ steps.info.outputs.timestamp }}
+          ZIP: ${{ steps.info.outputs.zip }}
+        run: |
+          set -euo pipefail
+          mkdir -p package
+          cp "publish/$PROJECT.dll" package/
+          python3 .github/scripts/release_manifest.py meta "$VERSION" "$RUNNER_TEMP/changelog.md" "$TIMESTAMP" "$ABI" package/meta.json
+          (cd package && zip -X -j "../$ZIP" ./*)
+          unzip -l "$ZIP"
+          echo "checksum=$(md5sum "$ZIP" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.info.outputs.tag }}
+          ZIP: ${{ steps.info.outputs.zip }}
+        run: |
+          gh release create "$TAG" "$ZIP" \
+            --title "$TAG" \
+            --notes-file "$RUNNER_TEMP/changelog.md" \
+            --target "$GITHUB_SHA"
+
+      - name: Update manifest.json on main
+        env:
+          VERSION: ${{ steps.info.outputs.version }}
+          TAG: ${{ steps.info.outputs.tag }}
+          ABI: ${{ steps.info.outputs.abi }}
+          TIMESTAMP: ${{ steps.info.outputs.timestamp }}
+          ZIP: ${{ steps.info.outputs.zip }}
+          CHECKSUM: ${{ steps.package.outputs.checksum }}
+        run: |
+          set -euo pipefail
+          SCRIPT="$RUNNER_TEMP/release_manifest.py"
+          cp .github/scripts/release_manifest.py "$SCRIPT"
+          git fetch origin main
+          git checkout -B main origin/main
+          python3 "$SCRIPT" manifest "$VERSION" "$RUNNER_TEMP/changelog.md" "$TIMESTAMP" "$ABI" "$CHECKSUM" \
+            "https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/$ZIP"
+          # Keep the csproj version in sync with the latest release
+          sed -i -E "s#<(AssemblyVersion|FileVersion)>[^<]*</#<\1>$VERSION</#" "$PROJECT/$PROJECT.csproj"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add manifest.json "$PROJECT/$PROJECT.csproj"
+          if git diff --cached --quiet; then echo "Nothing to commit"; exit 0; fi
+          git commit -m "Release $TAG: update manifest.json"
+          for i in 1 2 3; do
+            git push origin main && exit 0
+            git pull --rebase origin main
+          done
+          exit 1
