@@ -6,7 +6,7 @@
     "overview": "Radarr / Sonarr cleanup",
     "owner": "Kildeor",
     "category": "General",
-    "imageUrl": "",
+    "imageUrl": "https://raw.githubusercontent.com/Kildeor/Jellyfin.Plugin.MediaPruner/main/images/logo.png",
     "versions": [
       {
         "version": "1.1.0.0",

@@ -1,6 +1,10 @@
 # Media Pruner – Jellyfin 12 plugin
 
+<p align="center"><img src="images/logo.png" alt="Media Pruner" width="480"></p>
+
 Automatically or manually deletes **movies (Radarr)** and **series (Sonarr)** based on configurable criteria, right from the Jellyfin dashboard.
+
+![Pending deletion tab](images/pending.png)
 
 ## Features
 
@@ -27,6 +31,10 @@ Automatically or manually deletes **movies (Radarr)** and **series (Sonarr)** ba
 1. **Options**: all the settings above.
 2. **Pending deletion**: items scheduled for deletion within the next *X* days (poster, date added, deletion date, size, favorites, exclusion reason). Actions: delete an item, delete the selection, delete all eligible items, protect / unprotect. Filters: "show excluded items" and "entire library".
 3. **History**: the last 500 deletions (auto, manual, dry run) with their result.
+
+![Options tab](images/options.png)
+
+![History tab](images/history.png)
 
 The **"Radarr / Sonarr cleanup"** scheduled task (category *Media Pruner*) runs every day at 3 AM by default; the schedule can be changed in *Dashboard -> Scheduled Tasks*.
 
