@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/Kildeor/Jellyfin.Plugin.MediaPruner/main/images/logo.png",
     "versions": [
       {
+        "version": "1.2.0.0",
+        "changelog": "- Fix release packaging CI: move actions to Node 24 versions\n- Add images to README, and set logo URL in manifest\n- Add ci/github-actions\n- Add unit tests for Media Pruner plugin\n- Add option to not delete items not found in Jellyfin\n- Dry-run mode : automatic and manual deletions only log, nothing is deleted",
+        "targetAbi": "12.4.0.0",
+        "sourceUrl": "https://github.com/Kildeor/Jellyfin.Plugin.MediaPruner/releases/download/v1.2.0.0/MediaPruner_1.2.0.0.zip",
+        "checksum": "5d1feeb358acbe75288ca51c915eba34",
+        "timestamp": "2026-11-11T14:36:16Z"
+      },
+      {
         "version": "1.1.0.0",
         "changelog": "New reference date option: download date (Radarr movie file import date, Sonarr most recently downloaded episode).",
         "targetAbi": "12.4.0.0",
