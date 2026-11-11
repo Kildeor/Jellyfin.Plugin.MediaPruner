@@ -30,7 +30,7 @@ Automatically or manually deletes **movies (Radarr)** and **series (Sonarr)** ba
 
 The **"Radarr / Sonarr cleanup"** scheduled task (category *Media Pruner*) runs every day at 3 AM by default; the schedule can be changed in *Dashboard -> Scheduled Tasks*.
 
-## Jellyfin ↔ *arr matching
+## Jellyfin <-> *arr matching
 
 Items are matched using TMDb / IMDb IDs (movies) and TVDB / TMDb / IMDb IDs (series). Favorites and watch status are read for **all** Jellyfin users. By default, an item missing from Jellyfin is excluded ("Not in Jellyfin"), since its favorites and watch status cannot be checked; disable *Do not delete if not found in Jellyfin* to delete such items based on the date criterion alone.
 
@@ -55,3 +55,7 @@ Items are matched using TMDb / IMDb IDs (movies) and TVDB / TMDb / IMDb IDs (ser
 
 1. Dashboard -> **Media Pruner**: fill in Radarr / Sonarr, test, save.
 2. Check the "Pending deletion" tab, then disable dry-run mode and enable automatic deletion.
+
+## Building
+
+Requirements: .NET 10 SDK.
