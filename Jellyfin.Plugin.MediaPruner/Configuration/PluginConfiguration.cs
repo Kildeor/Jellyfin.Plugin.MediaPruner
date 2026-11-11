@@ -74,7 +74,7 @@ public class PluginConfiguration : BasePluginConfiguration
     /// <summary>Automatic deletion (scheduled task) or manual only.</summary>
     public bool AutoDelete { get; set; }
 
-    /// <summary>Dry-run mode: the automatic task logs without deleting.</summary>
+    /// <summary>Dry-run mode: automatic and manual deletions only log, nothing is deleted.</summary>
     public bool DryRun { get; set; } = true;
 
     /// <summary>Also delete the files from disk.</summary>

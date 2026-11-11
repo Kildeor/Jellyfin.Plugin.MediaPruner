@@ -15,7 +15,7 @@ Automatically or manually deletes **movies (Radarr)** and **series (Sonarr)** ba
 | | Radarr/Sonarr protected tags (default `keep`) |
 | | Manual per-item protection |
 | **Mode** | Automatic deletion (scheduled task) or manual |
-| | Dry-run mode (the task logs without deleting anything) — **enabled by default** |
+| | Dry-run mode (automatic and manual deletions only log, nothing is deleted) — **enabled by default** |
 | | Deletion limit per run (safeguard, 10 by default) |
 | | Delete files, add import exclusion, scan the library after deletion |
 | **Jellyfin tag** | Adds a tag (default `Leaving soon`) to movies/series that will be deleted within the warning window, removed automatically when they are no longer pending |
@@ -34,6 +34,8 @@ The **"Radarr / Sonarr cleanup"** scheduled task (category *Media Pruner*) runs 
 Items are matched using TMDb / IMDb IDs (movies) and TVDB / TMDb / IMDb IDs (series). Favorites and watch status are read for **all** Jellyfin users. An item missing from Jellyfin can still be deleted based on the date criterion.
 
 ## Installation
+
+> ⚠️ Requires **Jellyfin 12.4** (target ABI `12.4.0.0`). Dry-run mode is **enabled by default**, so nothing is deleted until you turn it off.
 
 ### From the plugin repository (recommended)
 

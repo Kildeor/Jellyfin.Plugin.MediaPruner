@@ -88,13 +88,16 @@ function notify(text) {
 
 function describeResult(r) {
     const prefix = r.dryRun ? '[Dry run] ' : '';
-    let msg = `${prefix}${r.deleted} item(s) deleted, ${formatSize(r.freedBytes)} freed.`;
+    let msg = r.dryRun
+        ? `${prefix}${r.deleted} item(s) would be deleted, ${formatSize(r.freedBytes)} would be freed. Nothing was deleted.`
+        : `${prefix}${r.deleted} item(s) deleted, ${formatSize(r.freedBytes)} freed.`;
     if (r.failed) msg += ` ${r.failed} failed, see the history.`;
     return msg;
 }
 
 export default function (view) {
     let candidates = [];
+    let dryRun = false;
     const selected = new Set();
 
     const $ = sel => view.querySelector(sel);
@@ -166,6 +169,7 @@ export default function (view) {
         const all = $('#chkShowAll').checked;
         api('GET', 'MediaPruner/Candidates?all=' + all).then(r => {
             candidates = r.items || [];
+            dryRun = !!r.dryRun;
             selected.clear();
             $('#mcErrors').innerHTML = (r.errors || []).map(esc).join('<br>');
             renderCandidates();
@@ -249,8 +253,11 @@ export default function (view) {
     function deleteKeys(keys) {
         const items = candidates.filter(c => keys.includes(c.key));
         const names = items.slice(0, 10).map(c => '• ' + c.title).join('\n') + (items.length > 10 ? `\n… and ${items.length - 10} more` : '');
-        const filesWarn = $('#DeleteFiles').checked ? '\n\nFiles will be deleted from disk.' : '';
-        confirmAction(`Permanently delete ${keys.length} item(s) from Radarr/Sonarr?\n\n${names}${filesWarn}`).then(ok => {
+        const question = dryRun
+            ? `[Dry run] Simulate the deletion of ${keys.length} item(s)? Nothing will be deleted.`
+            : `Permanently delete ${keys.length} item(s) from Radarr/Sonarr?`;
+        const filesWarn = !dryRun && $('#DeleteFiles').checked ? '\n\nFiles will be deleted from disk.' : '';
+        confirmAction(`${question}\n\n${names}${filesWarn}`).then(ok => {
             if (!ok) return;
             Dashboard.showLoadingMsg();
             api('POST', 'MediaPruner/Delete', { Keys: keys }).then(r => {
@@ -299,7 +306,9 @@ export default function (view) {
     $('#btnDeleteSelected').addEventListener('click', () => deleteKeys(Array.from(selected)));
     $('#btnDeleteEligible').addEventListener('click', () => {
         const eligible = candidates.filter(c => c.isEligible);
-        confirmAction(`Delete the ${eligible.length} eligible item(s) now?`).then(ok => {
+        confirmAction(dryRun
+            ? `[Dry run] Simulate the deletion of the ${eligible.length} eligible item(s)? Nothing will be deleted.`
+            : `Delete the ${eligible.length} eligible item(s) now?`).then(ok => {
             if (!ok) return;
             Dashboard.showLoadingMsg();
             api('POST', 'MediaPruner/DeleteEligible').then(r => {

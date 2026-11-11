@@ -55,6 +55,9 @@ public class CandidatesResult
 {
     public DateTime GeneratedAt { get; set; }
 
+    /// <summary>Whether dry-run mode is active (deletions are only simulated).</summary>
+    public bool DryRun { get; set; }
+
     public List<CleanupCandidate> Items { get; set; } = new();
 
     public List<string> Errors { get; set; } = new();

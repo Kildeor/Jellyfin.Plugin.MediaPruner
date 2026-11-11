@@ -65,7 +65,7 @@ public class CleanupService
     public async Task<CandidatesResult> EvaluateAsync(bool all, CancellationToken ct)
     {
         var config = Config;
-        var result = new CandidatesResult { GeneratedAt = DateTime.UtcNow };
+        var result = new CandidatesResult { GeneratedAt = DateTime.UtcNow, DryRun = config.DryRun };
         var now = DateTime.UtcNow;
         var window = all ? int.MaxValue : Math.Max(0, config.WarningDays);
         var protectedKeys = new HashSet<string>(config.ProtectedItems ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
@@ -218,15 +218,16 @@ public class CleanupService
         return await DeleteCandidatesAsync(eligible, config.DryRun ? "Dry run" : "Auto", config.DryRun, progress, ct).ConfigureAwait(false);
     }
 
-    /// <summary>Manually deletes all currently eligible items.</summary>
+    /// <summary>Manually deletes all currently eligible items (honours dry-run mode).</summary>
     public async Task<DeleteResult> DeleteAllEligibleAsync(CancellationToken ct)
     {
+        var dryRun = Config.DryRun;
         var evaluation = await EvaluateAsync(false, ct).ConfigureAwait(false);
         var eligible = evaluation.Items.Where(i => i.IsEligible).ToList();
-        return await DeleteCandidatesAsync(eligible, "Manual", false, null, ct).ConfigureAwait(false);
+        return await DeleteCandidatesAsync(eligible, dryRun ? "Dry run" : "Manual", dryRun, null, ct).ConfigureAwait(false);
     }
 
-    /// <summary>Manually deletes the given items (ignoring the criteria).</summary>
+    /// <summary>Manually deletes the given items (ignoring the criteria, honouring dry-run mode).</summary>
     public async Task<DeleteResult> DeleteByKeysAsync(IEnumerable<string> keys, CancellationToken ct)
     {
         var config = Config;
@@ -267,7 +268,7 @@ public class CleanupService
             }
         }
 
-        return await DeleteCandidatesAsync(candidates, "Manual", false, null, ct).ConfigureAwait(false);
+        return await DeleteCandidatesAsync(candidates, config.DryRun ? "Dry run" : "Manual", config.DryRun, null, ct).ConfigureAwait(false);
     }
 
     /// <summary>Protects or unprotects an item.</summary>
