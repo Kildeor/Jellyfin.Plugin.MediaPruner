@@ -720,6 +720,10 @@ public class CleanupService
             c.JellyfinId = jf.Id.ToString("N", CultureInfo.InvariantCulture);
             FillUserData(c, jf, users, config);
         }
+        else if (config.KeepIfNotInJellyfin)
+        {
+            c.ExclusionReasons.Add("Not in Jellyfin");
+        }
 
         if (config.KeepFavorites && c.IsFavorite)
         {

@@ -156,6 +156,13 @@
                                 <span>Do not delete series that are still airing</span>
                             </label>
                         </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="KeepIfNotInJellyfin" type="checkbox" is="emby-checkbox" />
+                                <span>Do not delete if not found in Jellyfin</span>
+                            </label>
+                            <div class="fieldDescription checkboxFieldDescription">Items that cannot be matched to the Jellyfin library (TMDb / IMDb / TVDB IDs) are never deleted automatically, since favorites and watch status cannot be checked for them.</div>
+                        </div>
                     </fieldset>
 
                     <fieldset>

@@ -63,6 +63,9 @@ public class PluginConfiguration : BasePluginConfiguration
     /// <summary>Do not delete series that are still airing (Sonarr status "continuing").</summary>
     public bool KeepContinuingSeries { get; set; }
 
+    /// <summary>Do not delete an item that cannot be found in the Jellyfin library (no TMDb/IMDb/TVDB match).</summary>
+    public bool KeepIfNotInJellyfin { get; set; } = true;
+
     /// <summary>Radarr/Sonarr tags that protect an item (comma-separated).</summary>
     public string ProtectedTags { get; set; } = "keep";
 

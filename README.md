@@ -12,10 +12,11 @@ Automatically or manually deletes **movies (Radarr)** and **series (Sonarr)** ba
 | | Only delete fully watched items (optional) |
 | | Keep if played in the last X days |
 | | Keep series that are still airing (Sonarr status `continuing`) |
+| | Do not delete items not found in Jellyfin - **enabled by default** |
 | | Radarr/Sonarr protected tags (default `keep`) |
 | | Manual per-item protection |
 | **Mode** | Automatic deletion (scheduled task) or manual |
-| | Dry-run mode (automatic and manual deletions only log, nothing is deleted) — **enabled by default** |
+| | Dry-run mode (automatic and manual deletions only log, nothing is deleted) - **enabled by default** |
 | | Deletion limit per run (safeguard, 10 by default) |
 | | Delete files, add import exclusion, scan the library after deletion |
 | **Jellyfin tag** | Adds a tag (default `Leaving soon`) to movies/series that will be deleted within the warning window, removed automatically when they are no longer pending |
@@ -31,7 +32,7 @@ The **"Radarr / Sonarr cleanup"** scheduled task (category *Media Pruner*) runs 
 
 ## Jellyfin ↔ *arr matching
 
-Items are matched using TMDb / IMDb IDs (movies) and TVDB / TMDb / IMDb IDs (series). Favorites and watch status are read for **all** Jellyfin users. An item missing from Jellyfin can still be deleted based on the date criterion.
+Items are matched using TMDb / IMDb IDs (movies) and TVDB / TMDb / IMDb IDs (series). Favorites and watch status are read for **all** Jellyfin users. By default, an item missing from Jellyfin is excluded ("Not in Jellyfin"), since its favorites and watch status cannot be checked; disable *Do not delete if not found in Jellyfin* to delete such items based on the date criterion alone.
 
 ## Installation
 

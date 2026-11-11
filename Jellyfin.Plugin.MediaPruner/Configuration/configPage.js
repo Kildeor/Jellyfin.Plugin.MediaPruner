@@ -4,7 +4,7 @@ const textFields = ['RadarrUrl', 'RadarrApiKey', 'SonarrUrl', 'SonarrApiKey', 'P
     'PendingCollectionName'];
 const numberFields = ['DaysBeforeDeletion', 'KeepIfPlayedWithinDays', 'MaxDeletionsPerRun', 'WarningDays'];
 const boolFields = ['RadarrEnabled', 'SonarrEnabled', 'KeepFavorites', 'KeepFavoriteEpisodes', 'OnlyWatched',
-    'KeepContinuingSeries', 'AutoDelete', 'DryRun', 'DeleteFiles', 'AddImportExclusion', 'RefreshLibraryAfterDelete',
+    'KeepContinuingSeries', 'KeepIfNotInJellyfin', 'AutoDelete', 'DryRun', 'DeleteFiles', 'AddImportExclusion', 'RefreshLibraryAfterDelete',
     'TagPendingItems', 'CollectionPendingItems'];
 
 // API responses may be PascalCase or camelCase: normalize to camelCase.
@@ -216,7 +216,7 @@ export default function (view) {
             const status = [];
             if (c.isWatched) status.push('<span class="mc-badge mc-reason">Watched</span>');
             if (c.isFavorite) status.push('<span class="mc-badge mc-reason">★ Favorite</span>');
-            if (!c.jellyfinId) status.push('<span class="mc-badge mc-reason">Not in Jellyfin</span>');
+            if (!c.jellyfinId && !reasons.includes('Not in Jellyfin')) status.push('<span class="mc-badge mc-reason">Not in Jellyfin</span>');
             reasons.forEach(r => status.push(`<span class="mc-badge mc-reason" title="Excluded from automatic deletion">⛔ ${esc(r)}</span>`));
             const poster = c.posterUrl ? `<img class="mc-poster" loading="lazy" src="${esc(c.posterUrl)}" alt="">` : '<span class="mc-poster"></span>';
             const title = c.jellyfinId
